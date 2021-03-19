@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import re
 import urllib.parse
+import pickle
 
 
 def get_data():
@@ -88,23 +89,26 @@ def get_nearby_users():
     pd.DataFrame(dfemail).to_csv('data/bullets.csv',index=False)
 
 def draft_email():
-    pbar = lambda: print('%s\n'%(100*'~'))
+    pbar = lambda: print('%s\n\n'%(100*'~'))
     pbar()
     df = pd.read_csv('data/bullets.csv')
     l = len(df)
     names = df['name'].tolist()
     emails = df['email'].tolist()
     bullets = df['bullets'].tolist()
+    emails_lst = []
     for i in range(l):
         body = 'Dear %s,\n\nWe have identified the following food opportunities near you!\n\n%s\n\n'%(names[i],bullets[i])
         fullemail = 'From: %s\nTo: %s\nSubject: %s\n\n%s'%('customemail@gmail.com',emails[i],'Food Opportunity',body)
+        emails_lst.append(fullemail)
         print('\n%s'%fullemail)
         pbar()
+    with open('data/emails.pkl','wb') as f: pickle.dump(emails_lst,f)
 
 if __name__ == '__main__':
-    #get_data()
-    #clean()
-    #add_lat_long(df)
-    #get_nearby_users()
+    get_data()
+    clean()
+    add_lat_long(df)
+    get_nearby_users()
     draft_email()
 
