@@ -1,0 +1,21 @@
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - ca-certificates=2020.12.5=h033912b_0
+  - certifi=2020.12.5=py38h50d1736_1
+  - libcxx=11.1.0=habf9029_0
+  - libffi=3.2.1=hb1e8313_1007
+  - ncurses=6.2=h2e338ed_4
+  - openssl=1.1.1j=hbcf498f_0
+  - pip=21.0.1=pyhd8ed1ab_0
+  - python=3.8.0=hd366da7_5
+  - python_abi=3.8=1_cp38
+  - readline=8.0=h0678c8f_2
+  - setuptools=49.6.0=py38h50d1736_3
+  - sqlite=3.34.0=h17101e1_0
+  - tk=8.6.10=h0419947_1
+  - wheel=0.36.2=pyhd3deb0d_0
+  - xz=5.2.5=haf1e3a3_1
+  - zlib=1.2.11=h7795811_1010
+prefix: /Users/alegresor/miniconda3/envs/csw
