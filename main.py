@@ -7,9 +7,12 @@ import pickle
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
+import smtplib, ssl
+from email.mime.text import MIMEText
 
 def get_data():
     # available locations
+    print('Scraping data from CFB website')
     reqget = requests.get(
         url = 'https://www.chicagosfoodbank.org/find-food/covid-19-neighborhood-sites/',
         headers = {'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36'})
@@ -20,8 +23,9 @@ def get_data():
     df = df[2:]
     df.to_csv('data/raw.csv',index=False)
     # Google Form Responses
+    print('Gathering responses from google form')
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds =   ServiceAccountCredentials.from_json_keyfile_name('_ags_google_credentials.json', scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_name('_ags_google_credentials.json', scope)
     client = gspread.authorize(creds)
     sheet = client.open("Greater Chicago Food Depository (Responses)").sheet1
     list_of_hashes = sheet.get_all_values()
@@ -30,12 +34,14 @@ def get_data():
     df.to_csv('data/users.csv',index=False)
 
 def clean():
+    print('Cleaning CFB location data')
     df = pd.read_csv('data/raw.csv')
     # remove location info between () and add Chicago, IL
     df['Location(s)'] = [re.sub(r'\([^)]*\)','',l)+', Chicago, IL' for l in df['Location(s)'].tolist()] 
     df.to_csv('data/clean.csv',index=False)  
 
 def add_lat_long():
+    print('Gathering lat/lon data for CFB locations')
     df = pd.read_csv('data/clean.csv')
     l = len(df)
     adds = df['Location(s)'].tolist()
@@ -66,6 +72,7 @@ def dist_from_ll(lat1,lon1,lat2,lon2):
     return dist_miles
 
 def get_nearby_users():
+    print('Determining nearby users')
     # food dataframe
     dffull = pd.read_csv('data/full.csv')
     lfull = len(dffull)
@@ -100,9 +107,12 @@ def get_nearby_users():
     if len(dfemail['name'])==0: raise Exception("No users to email")
     pd.DataFrame(dfemail).to_csv('data/bullets.csv',index=False)
 
-def draft_email():
-    pbar = lambda: print('%s\n\n'%(100*'~'))
-    pbar()
+def send_emails()
+    print('Sending emails to nearby users')
+    with open('_ags/google_pw.txt','r') as f: pw = f.read()
+    sender = 'asorokin@hawk.iit.edu'
+    s = smtplib.SMTP_SSL(host='smtp.gmail.com',port=465)
+    s.login(user=sender, password=pw)
     df = pd.read_csv('data/bullets.csv')
     l = len(df)
     names = df['name'].tolist()
@@ -110,16 +120,17 @@ def draft_email():
     bullets = df['bullets'].tolist()
     emails_lst = []
     for i in range(l):
-        body = 'Dear %s,\n\nWe have identified the following food opportunities near you!\n\n%s\n\n'%(names[i],bullets[i])
-        fullemail = 'From: %s\nTo: %s\nSubject: %s\n\n%s'%('customemail@gmail.com',emails[i],'Food Opportunity',body)
-        emails_lst.append(fullemail)
-        print('\n%s'%fullemail)
-        pbar()
-    with open('data/emails.pkl','wb') as f: pickle.dump(emails_lst,f)
+        body = 'Dear %s,\n\nWe have identified the following food opportunities near you!\n\n%s\n\nBest Wishes,\nGreater Chicago Food Depository'%(names[i],bullets[i])
+        msg = MIMEText(body.replace('\n','<br>'),'html')
+        msg['Subject'] = 'Mobile Food Banks Near You - GCFD'
+        msg['From'] = sender
+        msg['To'] = emails[i]
+        s.sendmail(sender, [emails[i]], msg.as_string())
+    s.quit()
 
 if __name__ == '__main__':
     get_data()
     clean()
     add_lat_long()
     get_nearby_users()
-    draft_email()
+    send_emails()
