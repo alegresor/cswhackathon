@@ -25,7 +25,7 @@ def get_data():
     # Google Form Responses
     print('Gathering responses from google form')
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name('_ags_google_credentials.json', scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_name('_ags/google_creds.json', scope)
     client = gspread.authorize(creds)
     sheet = client.open("Greater Chicago Food Depository (Responses)").sheet1
     list_of_hashes = sheet.get_all_values()
@@ -107,7 +107,7 @@ def get_nearby_users():
     if len(dfemail['name'])==0: raise Exception("No users to email")
     pd.DataFrame(dfemail).to_csv('data/bullets.csv',index=False)
 
-def send_emails()
+def send_emails():
     print('Sending emails to nearby users')
     with open('_ags/google_pw.txt','r') as f: pw = f.read()
     sender = 'asorokin@hawk.iit.edu'
