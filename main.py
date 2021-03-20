@@ -4,9 +4,12 @@ import pandas as pd
 import re
 import urllib.parse
 import pickle
-
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import json
 
 def get_data():
+    # available locations
     reqget = requests.get(
         url = 'https://www.chicagosfoodbank.org/find-food/covid-19-neighborhood-sites/',
         headers = {'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36'})
@@ -16,6 +19,15 @@ def get_data():
     df.columns = df.iloc[1]
     df = df[2:]
     df.to_csv('data/raw.csv',index=False)
+    # Google Form Responses
+    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    creds =   ServiceAccountCredentials.from_json_keyfile_name('_ags_google_credentials.json', scope)
+    client = gspread.authorize(creds)
+    sheet = client.open("Greater Chicago Food Depository (Responses)").sheet1
+    list_of_hashes = sheet.get_all_values()
+    df = pd.DataFrame(list_of_hashes[1:],columns=['time','email','name','email2','address','radius'])
+    df = df[['name','email','address','radius']]
+    df.to_csv('data/users.csv',index=False)
 
 def clean():
     df = pd.read_csv('data/raw.csv')
@@ -108,7 +120,6 @@ def draft_email():
 if __name__ == '__main__':
     get_data()
     clean()
-    add_lat_long(df)
+    add_lat_long()
     get_nearby_users()
     draft_email()
-
